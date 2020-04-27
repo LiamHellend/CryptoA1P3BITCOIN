@@ -4,6 +4,7 @@ import json
 import hashlib
 import datetime
 import base64
+import time
 
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
@@ -35,11 +36,12 @@ def createGenisisBlock():
             block_data = "first block"
 
             block = {
-            "index": 0,
-            "data": block_data,
+            "Index": 0,
+            "Data": block_data,
             "Timestamp": datetime.datetime.now().isoformat(),
-            "previousHash": 0,
-            "hash": hashlib.sha256(block_data.encode('utf-8')).hexdigest()
+            "PreviousHash": 0,
+            "Hash": hashlib.sha256(block_data.encode('utf-8')).hexdigest(),
+            "Nonce": 0
             }
 
             json.dump(block, file)
@@ -54,7 +56,9 @@ def createRegularBlock():
 
     with open("transactions.json", "r") as transac_file:
         transaction = transac_file.readlines()[-1]
+        transaction = json.loads(transaction)
         transac_file.close()
+
     
     with open("blockchain.json", "r") as block_file:
         previousBlock = block_file.readlines()[-1]
@@ -65,19 +69,21 @@ def createRegularBlock():
 
     with open("blockchain.json", "a") as block_file:
 
-        block = {
-            "Index": 0,
-            "Data": transaction,
-            "Timestamp": datetime.datetime.now().isoformat(),
-            "PreviousHash": previousBlock["previousHash"]
-            }
-        
         nonce = 0
         while True:
 
-            block = json.dumps(block)
-            
-            block_hash = hashlib.sha256(block.encode('utf-8') + str(nonce).encode('utf-8')).hexdigest()
+            block = {
+            "Index": previousBlock["Index"]+1,
+            "Data": transaction,
+            "Timestamp": datetime.datetime.now().isoformat(),
+            "PreviousHash": previousBlock["Hash"],
+            "Hash": hashlib.sha256(str(transaction).encode('utf-8')).hexdigest(),
+            "Nonce": nonce
+            }
+
+            block_bytes = json.dumps(block, sort_keys=True).encode()
+
+            block_hash = hashlib.sha256(block_bytes).hexdigest()
 
             print(block_hash)
 
